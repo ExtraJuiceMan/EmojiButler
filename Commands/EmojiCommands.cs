@@ -16,12 +16,15 @@ namespace EmojiButler.Commands
     public class EmojiCommands
     {
         [Command("addemoji")]
-        [Description("Adds an emoji to your server.\n**Requires the 'Manage Emojis' permission**")]
+        [Description("Adds an emoji to your server from DiscordEmoji.\n**Requires the 'Manage Emojis' permission**")]
         [Cooldown(4, 10, CooldownBucketType.Guild)]
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task AddEmoji(CommandContext c, [Description("Name of the emoji to add")] string name,
             [Description("Optional name override")] string nameOverride = null)
         {
+            if (c.Guild == null)
+                throw new InvalidOperationException("You cannot modify emojis in a DM.");
+
             InteractivityModule i = c.Client.GetInteractivityModule();
 
             Emoji emoji = Emoji.FromName(name);
@@ -181,6 +184,9 @@ namespace EmojiButler.Commands
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task ClearEmoji(CommandContext c)
         {
+            if (c.Guild == null)
+                throw new InvalidOperationException("You cannot modify emojis in a DM.");
+
             InteractivityModule i = c.Client.GetInteractivityModule();
 
             IReadOnlyList<DiscordGuildEmoji> emojis = await c.Guild.GetEmojisAsync();
@@ -233,6 +239,9 @@ namespace EmojiButler.Commands
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task RemoveEmoji(CommandContext c, [Description("Name of the emoji to remove")] string name)
         {
+            if (c.Guild == null)
+                throw new InvalidOperationException("You cannot modify emojis in a DM.");
+
             IReadOnlyList<DiscordGuildEmoji> emojis = await c.Guild.GetEmojisAsync();
 
             if (!emojis.Any())

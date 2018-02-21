@@ -12,6 +12,22 @@ namespace EmojiButler.Commands
 {
     public class GeneralCommands
     {
+        [Command("reportissue")]
+        [Description("Reports an issue to the bot dev.")]
+        [Cooldown(1, 30, CooldownBucketType.User)]
+        public async Task ReportIssue(CommandContext c, [RemainingText] string issue)
+        {
+            DiscordChannel issueChannel = await c.Client.GetChannelAsync(EmojiButler.configuration.IssueChannel);
+
+            await issueChannel.SendMessageAsync(embed: new DiscordEmbedBuilder
+            {
+                Title = c.Guild != null ? $"{c.Guild.Name}" : "Direct Message",
+                Description = "From Channel: " + c.Channel.Id + "\n" + issue
+            }.WithAuthor(c.User.Username, null, c.User.AvatarUrl));
+
+            await c.Message.CreateReactionAsync(Reactions.OK);
+        }
+
         [Command("help")]
         [Description("Displays a help page.")]
         [Cooldown(1, 10, CooldownBucketType.User)]
@@ -21,23 +37,26 @@ namespace EmojiButler.Commands
             {
                 Title = "EmojiButler Manual",
                 Description = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission."
-            };
+            }.AddField("\u200B", "**Commands**");
 
-            try
+            foreach (KeyValuePair<string, Command> cmd in EmojiButler.commands.RegisteredCommands)
+                if (cmd.Value != null)
+                    Util.CreateCommandField(embed, cmd.Value);
+
+            embed.AddField("\u200B", "**Other Stuff**\nThis bot is primarily an interface to add emojis to your server from [DiscordEmoji](https://discordemoji.com), you should check it out before using the bot." +
+                "\n\n*The bot's logo is a modified version of the Jenkins (https://jenkins.io/) logo, and I am required by the license to link back to it.*");
+
+            if (c.Guild != null)
             {
-                foreach (KeyValuePair<string, Command> cmd in EmojiButler.commands.RegisteredCommands)
-                {
-                    if (cmd.Value != null)
-                        Util.CreateCommandField(embed, cmd.Value);
-                }
+                await c.Member.SendMessageAsync(embed: embed);
+                await c.Message.CreateReactionAsync(Reactions.OK);
             }
-            catch(Exception e) { Console.WriteLine(e.ToString()); }
-
-            await c.RespondAsync(embed: embed);
+            else
+                await c.RespondAsync(embed: embed);
         }
 
         [Command("emojify")]
-        [Description("Emojifies some text.")]
+        [Description("Emojifies some text. :ok_hand:")]
         [Cooldown(5, 15, CooldownBucketType.User)]
         public async Task Emojify(CommandContext c, [RemainingText] string content)
         {
@@ -52,13 +71,18 @@ namespace EmojiButler.Commands
             List<string> split = content.Split(' ').ToList();
 
             Random r = new Random();
-            int count = r.Next(split.Count);
+            int count = r.Next(1, split.Count);
             for (int i = 0; i < count; i++)
             {
                 string addedEmojis = "";
-                int addCount = r.Next(4);
+                int addCount = r.Next(0, 4);
+
+                if (content.Length < 100)
+                    addCount += 1;
+
                 for (int x = 0; x < addCount; x++)
                     addedEmojis += emojis.ElementAt(r.Next(emojis.Count()));
+
                 split.Insert(r.Next(split.Count), addedEmojis);
             }
 
@@ -68,5 +92,23 @@ namespace EmojiButler.Commands
 
             await c.RespondAsync(result);
         }
+
+        [Command("hi"), Description("If I'm alive, I'll wave. :wave:"), Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Hi(CommandContext c) => await c.RespondAsync(":wave:");
+
+        [Command("source"), Description("Gives you my sauce code. :spaghetti:"), Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Source(CommandContext c) => await c.RespondAsync("https://github.com/ExtraConcentratedJuice/EmojiButler");
+
+        [Command("info"), Description("Gives you some information about myself. :page_facing_up:"), Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Info(CommandContext c) =>
+            await c.RespondAsync(embed: new DiscordEmbedBuilder
+            {
+                Title = "Information",
+                Description = "Some information about EmojiButler.",
+                ThumbnailUrl = c.Client.CurrentUser.AvatarUrl
+            }
+            .AddField("Library", "DSharpPlus 3.2.3")
+            .AddField("Creator", "ExtraConcentratedJuice")
+            .AddField("Guild Count", Util.GetGuildCount(c.Client).ToString()));
     }
 }

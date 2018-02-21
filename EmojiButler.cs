@@ -2,6 +2,8 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Exceptions;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Net.WebSocket;
 using EmojiButler.Commands;
@@ -60,9 +62,7 @@ namespace EmojiButler
                 {
                     // lol
                     if (arg.Message.StartsWith("Max message length"))
-                    {
                         await e.Context.RespondAsync("I was able to generate a response, but it was a wayyy too long for Discord...");
-                    }
                     else
                         await e.Context.RespondAsync($"Not enough arguments were supplied to this command.\nUsage: ``{Util.GenerateUsage(e.Command)}``");
                 }
@@ -78,6 +78,10 @@ namespace EmojiButler
                     }
                     await e.Context.RespondAsync(msg);
                 }
+                else if (e.Exception is InvalidOperationException)
+                {
+                    await e.Context.RespondAsync("This command is not available for use in DMs.");
+                }
                 else if (e.Exception is CommandNotFoundException) { }
                 else
                 {
@@ -87,6 +91,10 @@ namespace EmojiButler
             };
 
             await client.ConnectAsync();
+            client.Ready += async (ReadyEventArgs a) =>
+            {
+                await client.UpdateStatusAsync(new DiscordGame($"{configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
+            };
             await Task.Delay(-1);
         }
     }
