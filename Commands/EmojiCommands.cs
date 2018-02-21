@@ -20,13 +20,27 @@ namespace EmojiButler.Commands
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task TryAddAll(CommandContext c)
         {
-            foreach (Emoji e in EmojiButler.deClient.Emoji)
+            try
             {
-                using (Stream s = await e.GetImage())
-                    await c.Guild.CreateEmojiAsync(e.Title, s);
-                Console.WriteLine(e.Title);
+                foreach (Emoji e in EmojiButler.deClient.Emoji)
+                {
+                    Console.WriteLine(e.Title);
+                    Console.WriteLine(e.GetImageUrl());
+
+                    using (Stream s = await e.GetImage())
+                        await c.Guild.CreateEmojiAsync(e.Title, s);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (ex is RatelimitTooHighException exr)
+                {
+                    await c.RespondAsync($"I couldn't process the request due to the extreme ratelimits Discord has placed on emoji management. Try again in {(int)exr.RemainingTime.TotalMinutes} minute(s).");
+                    return;
+                }
             }
         }
+
         [Command("addemoji")]
         [Description("Adds an emoji to your server.")]
         [Cooldown(4, 10, CooldownBucketType.Guild)]
@@ -47,7 +61,23 @@ namespace EmojiButler.Commands
                 return;
             }
 
-            DiscordGuildEmoji conflictingEmoji = (await c.Guild.GetEmojisAsync()).FirstOrDefault(x => x.Name == addedName);
+            var allEmoji = await c.Guild.GetEmojisAsync();
+
+            if (allEmoji.Where(x => !x.IsAnimated).Count() >= 50 && emoji.GetCategoryName() != "Animated")
+            {
+                await c.RespondAsync("It seems like you already have 50 emojis. That's the limit. Remove some before adding more.");
+                return;
+            }
+
+            if (allEmoji.Where(x => x.IsAnimated).Count() >= 50 && emoji.GetCategoryName() == "Animated")
+            {
+                await c.RespondAsync("It seems like you already have 50 *animated* emojis. That's the limit. Remove some before adding more.");
+                return;
+            }
+
+
+
+            DiscordGuildEmoji conflictingEmoji = (allEmoji.FirstOrDefault(x => x.Name == addedName));
 
             if (conflictingEmoji != null)
             {
@@ -126,8 +156,21 @@ namespace EmojiButler.Commands
                     {
                         DiscordMessage resp = await c.RespondAsync("Adding emoji...");
 
-                        using (Stream s = await emoji.GetImage())
-                            await c.Guild.CreateEmojiAsync(addedName, s, null, $"Added by {c.User.Username}");
+                        try
+                        {
+                            using (Stream s = await emoji.GetImage())
+                                await c.Guild.CreateEmojiAsync(addedName, s, null, $"Added by {c.User.Username}");
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e.ToString());
+                            if (e is BadRequestException)
+                            {
+                                await resp.ModifyAsync("I failed to upload the requested emoji to Discord. It was probably too big.");
+                                return;
+                            }
+                        }
+
 
                         await resp.ModifyAsync("", new DiscordEmbedBuilder
                         {
