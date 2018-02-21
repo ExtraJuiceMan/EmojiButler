@@ -14,10 +14,25 @@ namespace EmojiButler.Commands
 {
     public class EmojiCommands
     {
+        [Command("tryaddall")]
+        [Description("Adds an emoji to your server.")]
+        [Cooldown(4, 10, CooldownBucketType.Guild)]
+        [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
+        public async Task TryAddAll(CommandContext c)
+        {
+            foreach (Emoji e in EmojiButler.deClient.Emoji)
+            {
+                using (Stream s = await e.GetImage())
+                    await c.Guild.CreateEmojiAsync(e.Title, s);
+                Console.WriteLine(e.Title);
+            }
+        }
         [Command("addemoji")]
         [Description("Adds an emoji to your server.")]
+        [Cooldown(4, 10, CooldownBucketType.Guild)]
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
-        public async Task AddEmoji(CommandContext c, string name, string nameOverride = null)
+        public async Task AddEmoji(CommandContext c, [Description("Name of the emoji to add")] string name,
+            [Description("Optional name override")] string nameOverride = null)
         {
             InteractivityModule i = c.Client.GetInteractivityModule();
             Emoji emoji = EmojiButler.deClient.Emoji.FirstOrDefault(x => x.Title == name);
@@ -137,13 +152,14 @@ namespace EmojiButler.Commands
 
         [Command("clearemoji")]
         [Description("Clears all existing emoji on the server.")]
+        [Cooldown(4, 10, CooldownBucketType.Guild)]
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task ClearEmoji(CommandContext c)
         {
             InteractivityModule i = c.Client.GetInteractivityModule();
 
             IReadOnlyList<DiscordGuildEmoji> emojis = await c.Guild.GetEmojisAsync();
-            
+
             if (!emojis.Any())
             {
                 await c.RespondAsync("You have no emoji on this server to remove.");
@@ -163,13 +179,15 @@ namespace EmojiButler.Commands
             {
                 if (react.Message == m)
                 {
-                    await c.RespondAsync("Alright, I'm clearing all of the emojis on this server...");
+                    DiscordMessage clear = await c.RespondAsync("Alright, I'm clearing all of the emojis on this server...");
 
                     foreach (DiscordGuildEmoji e in emojis)
                     {
                         try { await c.Guild.DeleteEmojiAsync(e); }
                         catch (NotFoundException) { }
                     }
+
+                    await clear.ModifyAsync("I've cleared all of the emojis on this server.");
                 }
                 else
                 {
@@ -179,6 +197,33 @@ namespace EmojiButler.Commands
             }
             else
                 await c.RespondAsync("No response was given. Aborting.");
+        }
+
+        [Command("removeemoji")]
+        [Description("Removes an existing emoji from the server.")]
+        [Cooldown(5, 10, CooldownBucketType.Guild)]
+        [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
+        public async Task RemoveEmoji(CommandContext c, [Description("Name of the emoji to remove")] string name)
+        {
+            IReadOnlyList<DiscordGuildEmoji> emojis = await c.Guild.GetEmojisAsync();
+
+            if (!emojis.Any())
+            {
+                await c.RespondAsync("You have no emoji on this server to remove.");
+                return;
+            }
+
+            DiscordGuildEmoji toRemove = emojis.FirstOrDefault(x => x.Name == name);
+
+            if (toRemove == null)
+            {
+                await c.RespondAsync("I did not find any emoji by that name on this server to remove.");
+                return;
+            }
+
+            await c.Guild.DeleteEmojiAsync(toRemove);
+
+            await c.RespondAsync("Emoji successfully removed!");
         }
     }
 }

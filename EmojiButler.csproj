@@ -6,11 +6,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="3.2.3" />
-    <PackageReference Include="DSharpPlus.CommandsNext" Version="3.2.3" />
-    <PackageReference Include="DSharpPlus.Interactivity" Version="3.2.3" />
-    <PackageReference Include="DSharpPlus.WebSocket.WebSocket4NetCore" Version="3.2.3" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="DSharpPlus">
+      <HintPath>libs\DSharpPlus.dll</HintPath>
+    </Reference>
+    <Reference Include="DSharpPlus.CommandsNext">
+      <HintPath>libs\DSharpPlus.CommandsNext.dll</HintPath>
+    </Reference>
+    <Reference Include="DSharpPlus.Interactivity">
+      <HintPath>libs\DSharpPlus.Interactivity.dll</HintPath>
+    </Reference>
+    <Reference Include="DSharpPlus.WebSocket.WebSocket4NetCore">
+      <HintPath>libs\DSharpPlus.WebSocket.WebSocket4NetCore.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

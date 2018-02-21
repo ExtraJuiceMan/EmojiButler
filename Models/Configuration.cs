@@ -8,5 +8,6 @@ namespace EmojiButler.Models
     {
         public string Token { get; set; }
         public string Prefix { get; set; }
+        public ulong IssueChannel { get; set; }
     }
 }
