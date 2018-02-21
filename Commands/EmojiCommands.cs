@@ -8,50 +8,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace EmojiButler.Commands
 {
     public class EmojiCommands
     {
-        [Command("tryaddall")]
-        [Description("Adds an emoji to your server.")]
-        [Cooldown(4, 10, CooldownBucketType.Guild)]
-        [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
-        public async Task TryAddAll(CommandContext c)
-        {
-            try
-            {
-                foreach (Emoji e in EmojiButler.deClient.Emoji)
-                {
-                    Console.WriteLine(e.Title);
-                    Console.WriteLine(e.GetImageUrl());
-
-                    using (Stream s = await e.GetImage())
-                        await c.Guild.CreateEmojiAsync(e.Title, s);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (ex is RatelimitTooHighException exr)
-                {
-                    await c.RespondAsync($"I couldn't process the request due to the extreme ratelimits Discord has placed on emoji management. Try again in {(int)exr.RemainingTime.TotalMinutes} minute(s).");
-                    return;
-                }
-            }
-        }
-
         [Command("addemoji")]
-        [Description("Adds an emoji to your server.")]
+        [Description("Adds an emoji to your server.\n**Requires the 'Manage Emojis' permission**")]
         [Cooldown(4, 10, CooldownBucketType.Guild)]
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task AddEmoji(CommandContext c, [Description("Name of the emoji to add")] string name,
             [Description("Optional name override")] string nameOverride = null)
         {
             InteractivityModule i = c.Client.GetInteractivityModule();
-            Emoji emoji = EmojiButler.deClient.Emoji.FirstOrDefault(x => x.Title == name);
 
-            string addedName = nameOverride ?? emoji.Title;
+            Emoji emoji = Emoji.FromName(name);
 
             if (emoji == null)
             {
@@ -60,6 +33,8 @@ namespace EmojiButler.Commands
                     "\n\n(The emoji name is case sensitive. Don't include the colons in your command!)");
                 return;
             }
+
+            string addedName = nameOverride ?? emoji.Title;
 
             var allEmoji = await c.Guild.GetEmojisAsync();
 
@@ -74,8 +49,6 @@ namespace EmojiButler.Commands
                 await c.RespondAsync("It seems like you already have 50 *animated* emojis. That's the limit. Remove some before adding more.");
                 return;
             }
-
-
 
             DiscordGuildEmoji conflictingEmoji = (allEmoji.FirstOrDefault(x => x.Name == addedName));
 
@@ -109,11 +82,18 @@ namespace EmojiButler.Commands
                         }
 
                         try { await c.Guild.DeleteEmojiAsync(conflictingEmoji); }
-                        catch (NotFoundException) { }
+                        catch (Exception e)
+                        {
+                            if (e is RatelimitTooHighException exr)
+                            {
+                                await c.RespondAsync($"I couldn't process the request due to the extreme ratelimits Discord has placed on emoji management. Try again in {(int)exr.RemainingTime.TotalMinutes} minute(s).");
+                                return;
+                            }
+                            else if (e is NotFoundException) { }
+                        }
                     }
                     else
                     {
-                        await overwriteConfirm.DeleteAsync();
                         await c.RespondAsync("You did not react to the original message. Aborting.");
                         return;
                     }
@@ -163,14 +143,17 @@ namespace EmojiButler.Commands
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine(e.ToString());
                             if (e is BadRequestException)
                             {
                                 await resp.ModifyAsync("I failed to upload the requested emoji to Discord. It was probably too big.");
                                 return;
                             }
+                            else if (e is RatelimitTooHighException exr)
+                            {
+                                await c.RespondAsync($"I couldn't process the request due to the extreme ratelimits Discord has placed on emoji management. Try again in {(int)exr.RemainingTime.TotalMinutes} minute(s).");
+                                return;
+                            }
                         }
-
 
                         await resp.ModifyAsync("", new DiscordEmbedBuilder
                         {
@@ -184,7 +167,6 @@ namespace EmojiButler.Commands
                 }
                 else
                 {
-                    await m.DeleteAsync();
                     await c.RespondAsync("You did not react to the original message. Aborting.");
                     return;
                 }
@@ -194,7 +176,7 @@ namespace EmojiButler.Commands
         }
 
         [Command("clearemoji")]
-        [Description("Clears all existing emoji on the server.")]
+        [Description("Clears all existing emoji on the server.\n**Requires the 'Manage Emojis' permission**")]
         [Cooldown(4, 10, CooldownBucketType.Guild)]
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task ClearEmoji(CommandContext c)
@@ -227,9 +209,12 @@ namespace EmojiButler.Commands
                     foreach (DiscordGuildEmoji e in emojis)
                     {
                         try { await c.Guild.DeleteEmojiAsync(e); }
-                        catch (NotFoundException) { }
+                        catch (BadRequestException)
+                        {
+                            await c.RespondAsync("I failed to delete the emoji. Discord gave me a bad response.");
+                            return;
+                        }
                     }
-
                     await clear.ModifyAsync("I've cleared all of the emojis on this server.");
                 }
                 else
@@ -243,7 +228,7 @@ namespace EmojiButler.Commands
         }
 
         [Command("removeemoji")]
-        [Description("Removes an existing emoji from the server.")]
+        [Description("Removes an existing emoji from the server.\n**Requires the 'Manage Emojis' permission**")]
         [Cooldown(5, 10, CooldownBucketType.Guild)]
         [RequirePermissions(DSharpPlus.Permissions.ManageEmojis)]
         public async Task RemoveEmoji(CommandContext c, [Description("Name of the emoji to remove")] string name)
@@ -264,9 +249,40 @@ namespace EmojiButler.Commands
                 return;
             }
 
-            await c.Guild.DeleteEmojiAsync(toRemove);
+            try { await c.Guild.DeleteEmojiAsync(toRemove); }
+            catch (BadRequestException)
+            {
+                await c.RespondAsync("I failed to remove the emoji. Discord gave me a bad response.");
+                return;
+            }
 
             await c.RespondAsync("Emoji successfully removed!");
+        }
+
+        [Command("viewemoji")]
+        [Description("Displays an emoji from DiscordEmoji inside of an embed.")]
+        [Cooldown(5, 10, CooldownBucketType.Guild)]
+        public async Task ViewEmoji(CommandContext c, [Description("Name of the emoji to display")] string name)
+        {
+            Emoji emoji = Emoji.FromName(name);
+
+            if (emoji == null)
+            {
+                await c.RespondAsync("No emoji by that name was found on DiscordEmoji." +
+                    "\nPlease select a valid emoji from the catalog at https://discordemoji.com" +
+                    "\n\n(The emoji name is case sensitive. Don't include the colons in your command!)");
+
+                return;
+            }
+
+            await c.RespondAsync(embed: new DiscordEmbedBuilder
+            {
+                Title = $":{emoji.Title}:",
+                Url = $"https://discordemoji.com/emoji/{emoji.Slug}",
+                Description = $"Author: **{emoji.Author}**\nCategory: **{emoji.GetCategoryName()}**\n\nDescription:\n*{WebUtility.HtmlDecode(emoji.Description).Trim()}*",
+                ImageUrl = emoji.GetImageUrl()
+            }
+            .WithFooter("https://discordemoji.com", "https://discordemoji.com/assets/img/icon.png"));
         }
     }
 }

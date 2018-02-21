@@ -20,7 +20,7 @@ namespace EmojiButler.Commands
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder
             {
                 Title = "EmojiButler Manual",
-                Description = "The official EmojiButler manual. All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission."
+                Description = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission."
             };
 
             try
@@ -36,23 +36,37 @@ namespace EmojiButler.Commands
             await c.RespondAsync(embed: embed);
         }
 
-        [Command("reportissue")]
-        [Description("Reports an issue to the bot dev.")]
-        [Cooldown(1, 15, CooldownBucketType.User)]
-        public async Task ReportIssue(CommandContext c, string details)
+        [Command("emojify")]
+        [Description("Emojifies some text.")]
+        [Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Emojify(CommandContext c, [RemainingText] string content)
         {
-            DiscordChannel channel = await c.Client.GetChannelAsync(EmojiButler.configuration.IssueChannel);
-            await channel.SendMessageAsync(embed: new DiscordEmbedBuilder
+            // wtf dsharp
+            if (content == null)
+                throw new ArgumentException("Not enough arguments");
+
+            IEnumerable<string> emojis = Util.GetUnicodeEmojis()
+                .Select(x => x.Key)
+                .Where(x => x.StartsWith(':') && x.EndsWith(':') && !x.Contains("skin-tone") && !x.Contains("flag_"));
+
+            List<string> split = content.Split(' ').ToList();
+
+            Random r = new Random();
+            int count = r.Next(split.Count);
+            for (int i = 0; i < count; i++)
             {
-                Title = $"{c.Guild.Name} - {c.Guild.Id}",
-                Description = details,
-                Author = new DiscordEmbedBuilder.EmbedAuthor
-                {
-                    Name = c.User.Username,
-                    IconUrl = c.User.AvatarUrl
-                }
-            });
-            await c.Message.CreateReactionAsync(DiscordEmoji.FromName(c.Client, ":ok_hand:"));
+                string addedEmojis = "";
+                int addCount = r.Next(4);
+                for (int x = 0; x < addCount; x++)
+                    addedEmojis += emojis.ElementAt(r.Next(emojis.Count()));
+                split.Insert(r.Next(split.Count), addedEmojis);
+            }
+
+            string result = String.Join(' ', split);
+            if (result.Length >= 2000)
+                result = result.Substring(0, 1989) + " (trimmed)";
+
+            await c.RespondAsync(result);
         }
     }
 }

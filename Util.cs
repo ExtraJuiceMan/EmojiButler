@@ -19,18 +19,18 @@ namespace EmojiButler
             string prefix = EmojiButler.configuration.Prefix;
             string usage = GenerateUsage(c);
 
-            StringBuilder alias = new StringBuilder("None");
+            StringBuilder alias = null;
 
             if (c.Aliases != null)
             {
-                alias.Clear();
+                alias = new StringBuilder();
 
                 foreach (string s in c.Aliases)
                     alias.Append($"{prefix}{s} ");
             }
 
             embed.AddField($"{prefix}{command}",
-                $"\t{summary}\n\tUsage: ``{usage}``\n\tAliases: {alias}");
+                $"\t{summary}\n\tUsage: ``{usage}``\n\t{(alias != null ? "Aliases: " + alias : "")}");
         }
 
         public static string GenerateUsage(Command c)
@@ -44,6 +44,12 @@ namespace EmojiButler
                 result += "> ";
             }
             return result.Trim();
+        }
+
+        public static IReadOnlyDictionary<string, string> GetUnicodeEmojis()
+        {
+            PropertyInfo p = typeof(DiscordEmoji).GetProperty("UnicodeEmojis", BindingFlags.NonPublic | BindingFlags.Static);
+            return (IReadOnlyDictionary <string, string>)p.GetValue(null);
         }
     }
 }

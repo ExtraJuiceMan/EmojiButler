@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -40,5 +41,6 @@ namespace EmojiButler.Models
 
         public string GetCategoryName() => EmojiButler.deClient.Categories[Category];
         public string GetImageUrl() => $"{DiscordEmojiClient.BASE_ASSETS}{Slug}.{(GetCategoryName() == "Animated" ? "gif" : "png")}";
+        public static Emoji FromName(string n) => EmojiButler.deClient.Emoji.FirstOrDefault(x => x.Title == n);
     }
 }

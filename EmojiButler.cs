@@ -56,8 +56,16 @@ namespace EmojiButler
             commands.RegisterCommands<GeneralCommands>();
             commands.CommandErrored += async (CommandErrorEventArgs e) => 
             {
-                if (e.Exception is ArgumentException)
-                    await e.Context.RespondAsync($"Not enough arguments were supplied to this command.\nUsage: ``{Util.GenerateUsage(e.Command)}``");
+                if (e.Exception is ArgumentException arg)
+                {
+                    // lol
+                    if (arg.Message.StartsWith("Max message length"))
+                    {
+                        await e.Context.RespondAsync("I was able to generate a response, but it was a wayyy too long for Discord...");
+                    }
+                    else
+                        await e.Context.RespondAsync($"Not enough arguments were supplied to this command.\nUsage: ``{Util.GenerateUsage(e.Command)}``");
+                }
                 else if (e.Exception is ChecksFailedException ex)
                 {
                     string msg = "Checks for this command have failed: ";
