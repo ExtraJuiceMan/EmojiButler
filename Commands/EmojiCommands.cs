@@ -22,7 +22,7 @@ namespace EmojiButler.Commands
             InteractivityModule i = c.Client.GetInteractivityModule();
             Emoji emoji = EmojiButler.deClient.Emoji.FirstOrDefault(x => x.Title == name);
 
-            string addedName = nameOverride == null ? emoji.Title : nameOverride;
+            string addedName = nameOverride ?? emoji.Title;
 
             if (emoji == null)
             {
