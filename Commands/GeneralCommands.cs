@@ -1,6 +1,7 @@
 ﻿using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using EmojiButler.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +16,7 @@ namespace EmojiButler.Commands
         [Command("reportissue")]
         [Description("Reports an issue to the bot dev.")]
         [Cooldown(1, 30, CooldownBucketType.User)]
-        public async Task ReportIssue(CommandContext c, [RemainingText] string issue)
+        public async Task ReportIssue(CommandContext c, [RemainingText, Description("Issue to report")] string issue)
         {
             DiscordChannel issueChannel = await c.Client.GetChannelAsync(EmojiButler.configuration.IssueChannel);
 
@@ -39,9 +40,9 @@ namespace EmojiButler.Commands
                 Description = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission."
             }.AddField("\u200B", "**Commands**");
 
-            foreach (KeyValuePair<string, Command> cmd in EmojiButler.commands.RegisteredCommands)
-                if (cmd.Value != null)
-                    Util.CreateCommandField(embed, cmd.Value);
+            foreach (Command cmd in EmojiButler.commands.RegisteredCommands.Select(x => x.Value))
+                if (cmd != null && !cmd.IsHidden)
+                    Util.CreateCommandField(embed, cmd);
 
             embed.AddField("\u200B", "**Other Stuff**\nThis bot is primarily an interface to add emojis to your server from [DiscordEmoji](https://discordemoji.com), you should check it out before using the bot." +
                 "\n\n*The bot's logo is a modified version of the Jenkins (https://jenkins.io/) logo, and I am required by the license to link back to it.*");
@@ -55,10 +56,27 @@ namespace EmojiButler.Commands
                 await c.RespondAsync(embed: embed);
         }
 
+        [Command("destats")]
+        [Description("Displays DiscordEmoji statistics.")]
+        [Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task DeStats(CommandContext c)
+        {
+            Statistics s = EmojiButler.deClient.Statistics;
+            await c.RespondAsync(embed: new DiscordEmbedBuilder
+            {
+                Title = "DiscordEmoji Statistics"
+            }
+            .AddField("Emoji Count", s.Emoji.ToString())
+            .AddField("Favorites Count", s.Favorites.ToString())
+            .AddField("User Count", s.Users.ToString())
+            .AddField("Pending Approvals", s.PendingApprovals.ToString())
+            );
+        }
+
         [Command("emojify")]
         [Description("Emojifies some text. :ok_hand:")]
         [Cooldown(5, 15, CooldownBucketType.User)]
-        public async Task Emojify(CommandContext c, [RemainingText] string content)
+        public async Task Emojify(CommandContext c, [RemainingText, Description("Content to emojify")] string content)
         {
             // wtf dsharp
             if (content == null)
@@ -110,5 +128,11 @@ namespace EmojiButler.Commands
             .AddField("Library", "DSharpPlus 3.2.3")
             .AddField("Creator", "ExtraConcentratedJuice")
             .AddField("Guild Count", Util.GetGuildCount(c.Client).ToString()));
+
+        [Command("server"), Description("Displays an invite to the EmojiButler server."), Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Server(CommandContext c) => await c.RespondAsync("https://discord.gg/Ushqydb");
+
+        [Command("invite"), Description("Displays a link to invite me to your server."), Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Invite(CommandContext c) => await c.RespondAsync("https://discordapp.com/oauth2/authorize?client_id=415637632660537355&scope=bot&permissions=1073794112");
     }
 }

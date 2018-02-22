@@ -42,7 +42,8 @@ namespace EmojiButler
                 LogLevel = LogLevel.Debug,
                 #endif
                 Token = configuration.Token,
-                TokenType = TokenType.Bot
+                TokenType = TokenType.Bot,
+                AutoReconnect = true
             });
 
             commands = client.UseCommandsNext(new CommandsNextConfiguration
@@ -56,6 +57,7 @@ namespace EmojiButler
 
             commands.RegisterCommands<EmojiCommands>();
             commands.RegisterCommands<GeneralCommands>();
+
             commands.CommandErrored += async (CommandErrorEventArgs e) => 
             {
                 if (e.Exception is ArgumentException arg)
@@ -73,16 +75,19 @@ namespace EmojiButler
                     {
                         if (a is RequirePermissionsAttribute)
                             msg += "\nMissing Permissions";
+
                         else if (a is CooldownAttribute cd)
                             msg += $"\nCooldown, {(int)cd.GetRemainingCooldown(e.Context).TotalSeconds}s left";
                     }
                     await e.Context.RespondAsync(msg);
                 }
                 else if (e.Exception is InvalidOperationException)
-                {
                     await e.Context.RespondAsync("This command is not available for use in DMs.");
+                else if (e.Exception is CommandNotFoundException)
+                {
+                    if (e.Context.Guild == null)
+                        await e.Context.RespondAsync("That's an invalid command.");
                 }
-                else if (e.Exception is CommandNotFoundException) { }
                 else
                 {
                     await e.Context.RespondAsync($"An error has occurred. Please report this with ``{configuration.Prefix}reportissue <details>``.");

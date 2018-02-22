@@ -17,18 +17,20 @@ namespace EmojiButler
 
         private List<Emoji> emoji;
         private Dictionary<int, string> categories;
+        private Statistics statistics;
 
         public List<Emoji> Emoji { get => emoji; }
         public Dictionary<int, string> Categories { get => categories; }
+        public Statistics Statistics { get => statistics; }
 
         public const string BASE = "https://discordemoji.com/api";
         public const string BASE_ASSETS = "https://discordemoji.com/assets/emoji/";
 
         public DiscordEmojiClient()
         {
-            client = new HttpClient();
             emoji = GetEmojis().GetAwaiter().GetResult();
             categories = GetCategories().GetAwaiter().GetResult();
+            statistics = GetStatistics().GetAwaiter().GetResult();
         }
 
         public async Task<List<Emoji>> GetEmojis()
@@ -72,6 +74,8 @@ namespace EmojiButler
             while (true)
             {
                 emoji = await GetEmojis();
+                statistics = await GetStatistics();
+                categories = await GetCategories();
                 EmojiButler.client.DebugLogger.LogMessage(LogLevel.Info, "EmojiButler", "Cached emoji list updated.", DateTime.Now);
                 Thread.Sleep(TimeSpan.FromMinutes(5));
             }

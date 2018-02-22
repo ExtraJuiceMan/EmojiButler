@@ -31,7 +31,7 @@ namespace EmojiButler
             }
 
             embed.AddField($"{prefix}{command}",
-                $"\t{summary}\n\tUsage: ``{usage}``\n\t{(alias != null ? "Aliases: " + alias : "")}");
+                $"\t{summary}\n\tUsage: ``{usage}``\n\t{(alias != null ? $"Aliases: ``{alias}``" : "")}");
         }
 
         public static string GenerateUsage(Command c)

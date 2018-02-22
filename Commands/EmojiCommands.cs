@@ -288,7 +288,7 @@ namespace EmojiButler.Commands
             {
                 Title = $":{emoji.Title}:",
                 Url = $"https://discordemoji.com/emoji/{emoji.Slug}",
-                Description = $"Author: **{emoji.Author}**\nCategory: **{emoji.GetCategoryName()}**\n\nDescription:\n*{WebUtility.HtmlDecode(emoji.Description).Trim()}*",
+                Description = $"Author: **{emoji.Author}**\nCategory: **{emoji.GetCategoryName()}**\nFavorites: **{emoji.Favorites}**\n\nDescription:\n*{WebUtility.HtmlDecode(emoji.Description).Trim()}*",
                 ImageUrl = emoji.GetImageUrl()
             }
             .WithFooter("https://discordemoji.com", "https://discordemoji.com/assets/img/icon.png"));
