@@ -14,7 +14,6 @@ namespace EmojiButler
     {
         public static void CreateCommandField(DiscordEmbedBuilder embed, Command c)
         {
-            Console.WriteLine(c.Parent);
             string summary = c.Description ?? "No description provided.";
             string command = c.Name;
             string prefix = EmojiButler.configuration.Prefix;

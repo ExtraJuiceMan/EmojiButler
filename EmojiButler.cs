@@ -12,7 +12,9 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,10 +38,13 @@ namespace EmojiButler
             CancellationToken token = new CancellationTokenSource().Token;
             new Task(() => deClient.RefreshEmoji(), token, TaskCreationOptions.LongRunning).Start();
 
+            if (!String.IsNullOrWhiteSpace(configuration.DblAuth))
+                new Task(() => PostDBL(), token, TaskCreationOptions.LongRunning).Start();
+
             client = new DiscordClient(new DiscordConfiguration
             {
-                #if DEBUG
                 UseInternalLogHandler = true,
+                #if DEBUG
                 LogLevel = LogLevel.Debug,
                 #endif
                 Token = configuration.Token,
@@ -102,6 +107,25 @@ namespace EmojiButler
             client.Ready += async (ReadyEventArgs a) =>
                 await client.UpdateStatusAsync(new DiscordGame($"{configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
             await Task.Delay(-1);
+        }
+
+        static async Task PostDBL()
+        {
+            HttpClient c = new HttpClient();
+            c.DefaultRequestHeaders.Add("Authorization", configuration.DblAuth);
+
+            while (true)
+            {
+                HttpResponseMessage resp = await c.PostAsync($"https://discordbots.org/api/bots/{configuration.BotId}/stats",
+                     new StringContent("{'server_count': " + Util.GetGuildCount(client) + "}", Encoding.UTF8, "application/json"));
+
+                if (resp.IsSuccessStatusCode)
+                    client.DebugLogger.LogMessage(LogLevel.Info, "DBLPost", "Post to DBL was successful.", DateTime.Now);
+                else
+                    client.DebugLogger.LogMessage(LogLevel.Warning, "DBLPost", "Post to DBL was unsuccessful.", DateTime.Now);
+
+                Thread.Sleep(TimeSpan.FromMinutes(5));
+            }
         }
     }
 }

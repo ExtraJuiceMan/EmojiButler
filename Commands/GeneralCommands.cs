@@ -34,10 +34,15 @@ namespace EmojiButler.Commands
         [Cooldown(1, 10, CooldownBucketType.User)]
         public async Task Help(CommandContext c)
         {
+            string desc = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.";
+
+            if (!String.IsNullOrWhiteSpace(EmojiButler.configuration.DblAuth))
+                desc += "\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/415637632660537355)!";
+
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder
             {
                 Title = "EmojiButler Manual",
-                Description = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.\n\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/415637632660537355)! "
+                Description = desc
             }.AddField("\u200B", "**Commands**");
 
             foreach (Command cmd in EmojiButler.commands.RegisteredCommands.Select(x => x.Value))

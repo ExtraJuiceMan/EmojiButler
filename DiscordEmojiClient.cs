@@ -13,7 +13,7 @@ namespace EmojiButler
 {
     public class DiscordEmojiClient
     {
-        public static HttpClient client = new HttpClient();
+        public static readonly HttpClient client = new HttpClient();
 
         private List<Emoji> emoji;
         private Dictionary<int, string> categories;

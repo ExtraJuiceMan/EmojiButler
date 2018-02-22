@@ -22,7 +22,6 @@ namespace EmojiButler.Commands
         public async Task AddEmoji(CommandContext c, [Description("Name of the emoji to add")] string name,
             [Description("Optional name override")] string nameOverride = null)
         {
-            Console.WriteLine(c.Channel.IsNSFW);
             if (c.Guild == null)
                 throw new InvalidOperationException("You cannot modify emojis in a DM.");
 
@@ -99,7 +98,7 @@ namespace EmojiButler.Commands
                                 await c.RespondAsync($"I couldn't process the request due to the extreme ratelimits Discord has placed on emoji management. Try again in {(int)exr.RemainingTime.TotalMinutes} minute(s).");
                                 return;
                             }
-                            else if (e is NotFoundException) { }
+                            else if (e is NotFoundException) { /*Emoji doesn't exist anymore, ignore.*/ }
                         }
                     }
                     else
