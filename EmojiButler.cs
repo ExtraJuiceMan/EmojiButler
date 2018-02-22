@@ -38,15 +38,13 @@ namespace EmojiButler
             CancellationToken token = new CancellationTokenSource().Token;
             new Task(() => deClient.RefreshEmoji(), token, TaskCreationOptions.LongRunning).Start();
 
-            if (!String.IsNullOrWhiteSpace(configuration.DblAuth))
-                new Task(() => PostDBL(), token, TaskCreationOptions.LongRunning).Start();
 
             client = new DiscordClient(new DiscordConfiguration
             {
                 UseInternalLogHandler = true,
-                #if DEBUG
+#if DEBUG
                 LogLevel = LogLevel.Debug,
-                #endif
+#endif
                 Token = configuration.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true
@@ -66,7 +64,7 @@ namespace EmojiButler
             commands.RegisterCommands<EmojiCommands>();
             commands.RegisterCommands<GeneralCommands>();
 
-            commands.CommandErrored += async (CommandErrorEventArgs e) => 
+            commands.CommandErrored += async (CommandErrorEventArgs e) =>
             {
                 if (e.Exception is ArgumentException arg)
                 {
@@ -104,8 +102,15 @@ namespace EmojiButler
             };
 
             await client.ConnectAsync();
+
             client.Ready += async (ReadyEventArgs a) =>
+            {
                 await client.UpdateStatusAsync(new DiscordGame($"{configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
+
+                if (!String.IsNullOrWhiteSpace(configuration.DblAuth))
+                    new Task(() => PostDBL(), token, TaskCreationOptions.LongRunning).Start();
+            };
+
             await Task.Delay(-1);
         }
 
@@ -117,7 +122,7 @@ namespace EmojiButler
             while (true)
             {
                 HttpResponseMessage resp = await c.PostAsync($"https://discordbots.org/api/bots/{configuration.BotId}/stats",
-                     new StringContent("{'server_count': " + Util.GetGuildCount(client) + "}", Encoding.UTF8, "application/json"));
+                    new StringContent(JsonConvert.SerializeObject(new { server_count = Util.GetGuildCount(client) }), Encoding.UTF8, "application/json"));
 
                 if (resp.IsSuccessStatusCode)
                     client.DebugLogger.LogMessage(LogLevel.Info, "DBLPost", "Post to DBL was successful.", DateTime.Now);
