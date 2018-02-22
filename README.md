@@ -1,3 +1,5 @@
+![EmojiButler](https://i.imgur.com/xnoI5O8.png)
+
 # EmojiButler
 EmojiButler is a bot that allows you to add emoji from the catalog at https://discordemoji.com easily.
 
