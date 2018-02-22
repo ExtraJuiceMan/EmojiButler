@@ -22,3 +22,5 @@ Commands such as `e:addemoji` and `e:removeemoji` make managing emoji on your se
 | e:info                           	| None                                                                                                              	| Gives some information regarding the bot.                                                                              	|                                   	|
 | e:server                         	| None                                                                                                              	| Displays an invite to the bot's server.                                                                                	|                                   	|
 | e:invite                         	| None                                                                                                              	| Displays an invite that allows you to get the bot on your server.                                                      	|                                   	|
+
+<sub>The EmojiButler logo is a derivative of the [Jenkins](https://jenkins.io/) logo</sub>
