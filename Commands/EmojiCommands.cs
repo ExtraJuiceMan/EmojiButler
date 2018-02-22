@@ -22,6 +22,7 @@ namespace EmojiButler.Commands
         public async Task AddEmoji(CommandContext c, [Description("Name of the emoji to add")] string name,
             [Description("Optional name override")] string nameOverride = null)
         {
+            Console.WriteLine(c.Channel.IsNSFW);
             if (c.Guild == null)
                 throw new InvalidOperationException("You cannot modify emojis in a DM.");
 
@@ -34,6 +35,12 @@ namespace EmojiButler.Commands
                 await c.RespondAsync("No emoji by that name was found on DiscordEmoji." +
                     "\nPlease select a valid emoji from the catalog at https://discordemoji.com" +
                     "\n\n(The emoji name is case sensitive. Don't include the colons in your command!)");
+                return;
+            }
+
+            if (!c.Channel.IsNSFW && emoji.GetCategoryName() == "NSFW")
+            {
+                await c.RespondAsync("Woah, that's an NSFW emoji. Use this command in an NSFW channel.");
                 return;
             }
 
@@ -281,6 +288,12 @@ namespace EmojiButler.Commands
                     "\nPlease select a valid emoji from the catalog at https://discordemoji.com" +
                     "\n\n(The emoji name is case sensitive. Don't include the colons in your command!)");
 
+                return;
+            }
+
+            if (!c.Channel.IsNSFW && emoji.GetCategoryName() == "NSFW")
+            {
+                await c.RespondAsync("Woah, that's an NSFW emoji. Use this command in an NSFW channel.");
                 return;
             }
 

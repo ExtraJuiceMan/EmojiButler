@@ -37,7 +37,7 @@ namespace EmojiButler.Commands
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder
             {
                 Title = "EmojiButler Manual",
-                Description = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission."
+                Description = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.\n\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/415637632660537355)! "
             }.AddField("\u200B", "**Commands**");
 
             foreach (Command cmd in EmojiButler.commands.RegisteredCommands.Select(x => x.Value))

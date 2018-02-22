@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -52,7 +53,9 @@ namespace EmojiButler
                 StringPrefix = configuration.Prefix
             });
 
-            client.SetWebSocketClient<WebSocket4NetCoreClient>();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                client.SetWebSocketClient<WebSocket4NetCoreClient>();
+
             interactivity = client.UseInteractivity(new InteractivityConfiguration());
 
             commands.RegisterCommands<EmojiCommands>();
@@ -97,9 +100,7 @@ namespace EmojiButler
 
             await client.ConnectAsync();
             client.Ready += async (ReadyEventArgs a) =>
-            {
                 await client.UpdateStatusAsync(new DiscordGame($"{configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
-            };
             await Task.Delay(-1);
         }
     }
