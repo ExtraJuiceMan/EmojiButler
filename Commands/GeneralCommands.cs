@@ -30,14 +30,29 @@ namespace EmojiButler.Commands
         }
 
         [Command("help")]
-        [Description("Displays a help page.")]
-        [Cooldown(1, 10, CooldownBucketType.User)]
-        public async Task Help(CommandContext c)
+        [Description("Displays a help page. If an argument is supplied, it will display help for that command.")]
+        [Cooldown(1, 4, CooldownBucketType.User)]
+        public async Task Help(CommandContext c, [Description("Name of command")] string name = null)
         {
-            string desc = "The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.";
+            if (name != null)
+            {
+                Command cmd = EmojiButler.commands.RegisteredCommands.Select(x => x.Value).Where(x => x != null && !x.IsHidden)
+                    .FirstOrDefault(x => String.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
+
+                if (cmd == null)
+                {
+                    await c.RespondAsync("Command not found.");
+                    return;
+                }
+                string usage = Util.GenerateUsage(cmd);
+                string parameters = cmd.Arguments.Any() ? String.Join("\t\n", cmd.Arguments.Select(x => $"``{x.Name}``:\n\tOptional: {x.IsOptional}\n\tDescription {x.Description}")) : "None";
+                await c.RespondAsync($"\u200B\nCommand:\n\n``{usage}``\n\nParameters:\n\n{parameters}");
+                return;
+            }
+            string desc = $"The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.\n\nTo get help on a particular command, do ``{EmojiButler.configuration.Prefix}help <commandName>``.";
 
             if (!String.IsNullOrWhiteSpace(EmojiButler.configuration.DblAuth))
-                desc += "\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/415637632660537355)!";
+                desc += $"\n\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/{EmojiButler.configuration.BotId})!";
 
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder
             {

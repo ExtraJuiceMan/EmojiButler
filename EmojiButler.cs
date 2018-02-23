@@ -68,11 +68,16 @@ namespace EmojiButler
             {
                 if (e.Exception is ArgumentException arg)
                 {
-                    // lol
+                    // lol why even xd
                     if (arg.Message.StartsWith("Max message length"))
                         await e.Context.RespondAsync("I was able to generate a response, but it was a wayyy too long for Discord...");
+                    else if (arg.Message.StartsWith("Could not convert"))
+                        await e.Context.RespondAsync("You supplied an invalid argument.");
                     else
-                        await e.Context.RespondAsync($"Not enough arguments were supplied to this command.\nUsage: ``{Util.GenerateUsage(e.Command)}``");
+                    {
+                        int argsPassed = e.Context.Message.Content.Split(' ').Length - 1;
+                        await e.Context.RespondAsync($"{(argsPassed > e.Command.Arguments.Count ? "Too many" : "Not enough")} arguments were supplied to this command.\nUsage: ``{Util.GenerateUsage(e.Command)}``");
+                    }
                 }
                 else if (e.Exception is ChecksFailedException ex)
                 {

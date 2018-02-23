@@ -69,6 +69,8 @@ namespace EmojiButler
             }
         }
 
+        public string GetCategoryName(int c) => categories.GetValueOrDefault(c);
+
         public async Task RefreshEmoji()
         {
             while (true)

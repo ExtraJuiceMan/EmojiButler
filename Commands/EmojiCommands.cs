@@ -33,7 +33,9 @@ namespace EmojiButler.Commands
             {
                 await c.RespondAsync("No emoji by that name was found on DiscordEmoji." +
                     "\nPlease select a valid emoji from the catalog at https://discordemoji.com" +
-                    "\n\n(The emoji name is case sensitive. Don't include the colons in your command!)");
+                    "\n\n(The emoji name is case sensitive. Don't include the colons in your command!)" +
+                    "\n\n If you're too lazy to go on the website, you can use the ``emojis`` command to list emojis." +
+                    $"\n``{EmojiButler.configuration.Prefix}emojis <category> <page (Optional)>``");
                 return;
             }
 
@@ -305,6 +307,59 @@ namespace EmojiButler.Commands
             }
             .WithFooter("https://discordemoji.com", "https://discordemoji.com/assets/img/icon.png"));
         }
+
+        [Command("emojis")]
+        [Description("List all emojis for when you're too lazy to go on the website.")]
+        [Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task EmojiList(CommandContext c, [Description("Category name wrapped in quotes or category number")] string category,  [Description("Page number, starting at 0")] int page = 0)
+        {
+            int cat;
+            if (int.TryParse(category, out int res))
+            {
+                if (!EmojiButler.deClient.Categories.ContainsKey(res))
+                {
+                    await c.RespondAsync($"I didn't find the category that you specified. You can find all categories with the categories command.\n``{EmojiButler.configuration.Prefix}categories``");
+                    return;
+                }
+                cat = res;
+            }
+            else
+            {
+                if (!EmojiButler.deClient.Categories.Any(x => String.Equals(category, x.Value, StringComparison.OrdinalIgnoreCase)))
+                {
+                    await c.RespondAsync($"I didn't find the category that you specified. Try using the category number. You can find all categories with the categories command.\n``{EmojiButler.configuration.Prefix}categories``");
+                    return;
+                }
+                var k = EmojiButler.deClient.Categories.First(x => String.Equals(category, x.Value, StringComparison.OrdinalIgnoreCase));
+                cat = k.Key;
+            }
+
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder
+            {
+                Title = $"Category: {EmojiButler.deClient.GetCategoryName(cat)}"
+            };
+
+            var emojis = EmojiButler.deClient.Emoji.Where(x => x.Category == cat);
+            var sorted = emojis.Skip(page * 10).Take(10);
+
+            if (!sorted.Any())
+            {
+                page = emojis.Count() % 10 == 0 ? emojis.Count() / 10 - 1 : emojis.Count() / 10;
+                sorted = emojis.Skip(page * 10).Take(10);
+            }
+
+            bool lastPage = !emojis.Skip((page + 1) * 10).Any();
+
+            foreach (Emoji e in sorted)
+                embed.AddField($":{e.Title}:", $"[View](https://discordemoji.com/emoji/{e.Slug})");
+
+            embed.WithFooter($"Page: {page} | {(lastPage ? "(Last Page)" : $"View the next page with {EmojiButler.configuration.Prefix}emojis <category> {page + 1}")}");
+            await c.RespondAsync(embed: embed);
+        }
+
+        [Command("categories"), Description("Displays all existing categories on DiscordEmoji."), Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task Categories(CommandContext c) =>
+            await c.RespondAsync($"\nCategories:\n ```{String.Join("\n", EmojiButler.deClient.Categories.OrderBy(x => x.Key).Select(x => $"{x.Key} : {x.Value}"))}```");
     }
 }
 
