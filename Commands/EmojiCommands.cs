@@ -218,7 +218,7 @@ namespace EmojiButler.Commands
             {
                 if (react.Message == m)
                 {
-                    DiscordMessage clear = await c.RespondAsync("Alright, I'm clearing all of the emojis on this server...");
+                    DiscordMessage clear = await c.RespondAsync("Alright, I'm clearing all of the emojis on this server... This will take a couple of minutes due to Discord's ratelimits.");
 
                     foreach (DiscordGuildEmoji e in emojis)
                     {
@@ -308,10 +308,43 @@ namespace EmojiButler.Commands
             .WithFooter("https://discordemoji.com", "https://discordemoji.com/assets/img/icon.png"));
         }
 
+        [Command("searchemoji")]
+        [Description("Searches for an emoji by name. Case insensitive.")]
+        [Cooldown(5, 15, CooldownBucketType.User)]
+        public async Task SearchEmoji(CommandContext c, [Description("Name to search for")] string name)
+        {
+            if (name.Length < 3)
+            {
+                await c.RespondAsync("Your search query must be at least three characters long.");
+                return;
+            }
+
+            var emojis = EmojiButler.deClient.Emoji.Where(x => x.Title.IndexOf(name, StringComparison.OrdinalIgnoreCase) != -1);
+
+            if (emojis.Count() == 0)
+            {
+                await c.RespondAsync("No results were found for your query.");
+                return;
+            }
+
+            DiscordEmbedBuilder embed = new DiscordEmbedBuilder
+            {
+                Title = $"Search results for: '{name}'"
+            };
+
+            if (emojis.Count() > 20)
+                embed.WithDescription("Only the first 20 results were displayed. Please refine your search term if you were looking for something else.");
+
+            foreach (Emoji e in emojis.Take(20))
+                embed.AddField($":{e.Title}:", $"[View](https://discordemoji.com/emoji/{e.Slug})");
+
+            await c.RespondAsync(embed: embed);
+        }
+
         [Command("emojis")]
         [Description("List all emojis for when you're too lazy to go on the website.")]
         [Cooldown(5, 15, CooldownBucketType.User)]
-        public async Task EmojiList(CommandContext c, [Description("Category name wrapped in quotes or category number")] string category,  [Description("Page number, starting at 0")] int page = 0)
+        public async Task ListEmoji(CommandContext c, [Description("Category name wrapped in quotes or category number")] string category,  [Description("Page number, starting at 0")] int page = 0)
         {
             int cat;
             if (int.TryParse(category, out int res))
@@ -348,12 +381,10 @@ namespace EmojiButler.Commands
                 sorted = emojis.Skip(page * 10).Take(10);
             }
 
-            bool lastPage = !emojis.Skip((page + 1) * 10).Any();
-
             foreach (Emoji e in sorted)
                 embed.AddField($":{e.Title}:", $"[View](https://discordemoji.com/emoji/{e.Slug})");
 
-            embed.WithFooter($"Page: {page} | {(lastPage ? "(Last Page)" : $"View the next page with {EmojiButler.configuration.Prefix}emojis <category> {page + 1}")}");
+            embed.WithFooter($"Page: {page} | {(!emojis.Skip((page + 1) * 10).Any() ? "(Last Page)" : $"View the next page with {EmojiButler.configuration.Prefix}emojis <category> {page + 1}")}");
             await c.RespondAsync(embed: embed);
         }
 

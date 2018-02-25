@@ -71,7 +71,7 @@ namespace EmojiButler
 
         public string GetCategoryName(int c) => categories.GetValueOrDefault(c);
 
-        public async Task RefreshEmoji()
+        public async void RefreshEmoji()
         {
             while (true)
             {

@@ -10,7 +10,6 @@ using EmojiButler.Commands;
 using EmojiButler.Models;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
@@ -119,7 +118,7 @@ namespace EmojiButler
             await Task.Delay(-1);
         }
 
-        static async Task PostDBL()
+        static async void PostDBL()
         {
             HttpClient c = new HttpClient();
             c.DefaultRequestHeaders.Add("Authorization", configuration.DblAuth);
