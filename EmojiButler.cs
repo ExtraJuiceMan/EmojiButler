@@ -4,6 +4,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
+using DSharpPlus.Exceptions;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Net.WebSocket;
 using EmojiButler.Commands;
@@ -19,24 +20,27 @@ using System.Threading.Tasks;
 
 namespace EmojiButler
 {
-    public class EmojiButler
+    public static class EmojiButler
     {
         public static DiscordClient client;
         public static DiscordEmojiClient deClient;
         public static CommandsNextModule commands;
         public static Configuration configuration;
-        static InteractivityModule interactivity;
+        private static InteractivityModule interactivity;
 
-        static void Main(string[] args) => MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+        private static void Main(string[] args) => MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
 
-        static async Task MainAsync(string[] args)
+        private static async Task MainAsync(string[] args)
         {
             configuration = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("config.json"));
             deClient = new DiscordEmojiClient();
 
-            CancellationToken token = new CancellationTokenSource().Token;
-            new Task(() => deClient.RefreshEmoji(), token, TaskCreationOptions.LongRunning).Start();
+            CancellationToken token;
 
+            using (CancellationTokenSource s = new CancellationTokenSource())
+                token = s.Token;
+
+            new Task(() => deClient.RefreshEmojiAsync(), token, TaskCreationOptions.LongRunning).Start();
 
             client = new DiscordClient(new DiscordConfiguration
             {
@@ -85,7 +89,6 @@ namespace EmojiButler
                     {
                         if (a is RequirePermissionsAttribute)
                             msg += "\nMissing Permissions";
-
                         else if (a is CooldownAttribute cd)
                             msg += $"\nCooldown, {(int)cd.GetRemainingCooldown(e.Context).TotalSeconds}s left";
                     }
@@ -97,6 +100,10 @@ namespace EmojiButler
                 {
                     if (e.Context.Guild == null)
                         await e.Context.RespondAsync("That's an invalid command.");
+                }
+                else if (e.Exception is UnauthorizedException uex)
+                {
+                    await e.Context.RespondAsync("I was not authorized to perform an action, please check that I have the proper permissions. If this was a help command, make sure that you have DMs enabled.");
                 }
                 else
                 {
@@ -112,21 +119,23 @@ namespace EmojiButler
                 await client.UpdateStatusAsync(new DiscordGame($"{configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
 
                 if (!String.IsNullOrWhiteSpace(configuration.DblAuth))
-                    new Task(() => PostDBL(), token, TaskCreationOptions.LongRunning).Start();
+                    new Task(() => PostDBLAsync(), token, TaskCreationOptions.LongRunning).Start();
             };
 
             await Task.Delay(-1);
         }
 
-        static async void PostDBL()
+        private static async void PostDBLAsync()
         {
             HttpClient c = new HttpClient();
             c.DefaultRequestHeaders.Add("Authorization", configuration.DblAuth);
 
             while (true)
             {
-                HttpResponseMessage resp = await c.PostAsync($"https://discordbots.org/api/bots/{configuration.BotId}/stats",
-                    new StringContent(JsonConvert.SerializeObject(new { server_count = Util.GetGuildCount(client) }), Encoding.UTF8, "application/json"));
+                HttpResponseMessage resp;
+
+                using (StringContent s = new StringContent(JsonConvert.SerializeObject(new { server_count = Util.GetGuildCount(client) }), Encoding.UTF8, "application/json"))
+                    resp = await c.PostAsync($"https://discordbots.org/api/bots/{configuration.BotId}/stats", s);
 
                 if (resp.IsSuccessStatusCode)
                     client.DebugLogger.LogMessage(LogLevel.Info, "DBLPost", "Post to DBL was successful.", DateTime.Now);

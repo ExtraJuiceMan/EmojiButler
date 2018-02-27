@@ -1,11 +1,6 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EmojiButler.Models
@@ -36,11 +31,13 @@ namespace EmojiButler.Models
         public Emoji() { }
 
         // Original stream didn't support seek, have to copy it into a memorystream
-        public async Task<Stream> GetImage() =>
+        public async Task<Stream> GetImageAsync() =>
             new MemoryStream(await DiscordEmojiClient.client.GetByteArrayAsync(GetImageUrl()));
 
         public string GetCategoryName() => EmojiButler.deClient.Categories[Category];
+
         public string GetImageUrl() => $"{DiscordEmojiClient.BASE_ASSETS}{Slug}.{(GetCategoryName() == "Animated" ? "gif" : "png")}";
+
         public static Emoji FromName(string n) => EmojiButler.deClient.Emoji.FirstOrDefault(x => x.Title == n);
     }
 }

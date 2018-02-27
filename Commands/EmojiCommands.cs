@@ -49,13 +49,13 @@ namespace EmojiButler.Commands
 
             var allEmoji = await c.Guild.GetEmojisAsync();
 
-            if (allEmoji.Where(x => !x.IsAnimated).Count() >= 50 && emoji.GetCategoryName() != "Animated")
+            if (allEmoji.Count(x => !x.IsAnimated) >= 50 && emoji.GetCategoryName() != "Animated")
             {
                 await c.RespondAsync("It seems like you already have 50 emojis. That's the limit. Remove some before adding more.");
                 return;
             }
 
-            if (allEmoji.Where(x => x.IsAnimated).Count() >= 50 && emoji.GetCategoryName() == "Animated")
+            if (allEmoji.Count(x => !x.IsAnimated) >= 50 && emoji.GetCategoryName() == "Animated")
             {
                 await c.RespondAsync("It seems like you already have 50 *animated* emojis. That's the limit. Remove some before adding more.");
                 return;
@@ -149,7 +149,7 @@ namespace EmojiButler.Commands
 
                         try
                         {
-                            using (Stream s = await emoji.GetImage())
+                            using (Stream s = await emoji.GetImageAsync())
                                 await c.Guild.CreateEmojiAsync(addedName, s, null, $"Added by {c.User.Username}");
                         }
                         catch (Exception e)
@@ -321,7 +321,7 @@ namespace EmojiButler.Commands
 
             var emojis = EmojiButler.deClient.Emoji.Where(x => x.Title.IndexOf(name, StringComparison.OrdinalIgnoreCase) != -1);
 
-            if (emojis.Count() == 0)
+            if (!emojis.Any())
             {
                 await c.RespondAsync("No results were found for your query.");
                 return;
@@ -344,7 +344,7 @@ namespace EmojiButler.Commands
         [Command("emojis")]
         [Description("List all emojis for when you're too lazy to go on the website.")]
         [Cooldown(5, 15, CooldownBucketType.User)]
-        public async Task ListEmoji(CommandContext c, [Description("Category name wrapped in quotes or category number")] string category,  [Description("Page number, starting at 0")] int page = 0)
+        public async Task ListEmoji(CommandContext c, [Description("Category name wrapped in quotes or category number")] string category, [Description("Page number, starting at 0")] int page = 0)
         {
             int cat;
             if (int.TryParse(category, out int res))
@@ -393,4 +393,3 @@ namespace EmojiButler.Commands
             await c.RespondAsync($"\nCategories:\n ```{String.Join("\n", EmojiButler.deClient.Categories.OrderBy(x => x.Key).Select(x => $"{x.Key} : {x.Value}"))}```");
     }
 }
-

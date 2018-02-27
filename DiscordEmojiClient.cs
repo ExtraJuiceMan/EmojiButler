@@ -3,9 +3,7 @@ using EmojiButler.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,12 +26,12 @@ namespace EmojiButler
 
         public DiscordEmojiClient()
         {
-            emoji = GetEmojis().GetAwaiter().GetResult();
-            categories = GetCategories().GetAwaiter().GetResult();
-            statistics = GetStatistics().GetAwaiter().GetResult();
+            emoji = GetEmojisAsync().GetAwaiter().GetResult();
+            categories = GetCategoriesAsync().GetAwaiter().GetResult();
+            statistics = GetStatisticsAsync().GetAwaiter().GetResult();
         }
 
-        public async Task<List<Emoji>> GetEmojis()
+        public async Task<List<Emoji>> GetEmojisAsync()
         {
             using (HttpResponseMessage resp = await client.GetAsync(new Uri(BASE)))
             {
@@ -42,7 +40,7 @@ namespace EmojiButler
             }
         }
 
-        public async Task<Dictionary<int, string>> GetCategories()
+        public async Task<Dictionary<int, string>> GetCategoriesAsync()
         {
             using (HttpResponseMessage resp = await client.GetAsync(new Uri(BASE + "?request=categories")))
             {
@@ -51,7 +49,7 @@ namespace EmojiButler
             }
         }
 
-        public async Task<Statistics> GetStatistics()
+        public async Task<Statistics> GetStatisticsAsync()
         {
             using (HttpResponseMessage resp = await client.GetAsync(new Uri(BASE + "?request=stats")))
             {
@@ -60,7 +58,7 @@ namespace EmojiButler
             }
         }
 
-        public async Task<List<Emoji>> SearchEmojis(string query)
+        public async Task<List<Emoji>> SearchEmojisAsync(string query)
         {
             using (HttpResponseMessage resp = await client.GetAsync(new Uri(BASE + "?request=search&q=" + query)))
             {
@@ -71,13 +69,13 @@ namespace EmojiButler
 
         public string GetCategoryName(int c) => categories.GetValueOrDefault(c);
 
-        public async void RefreshEmoji()
+        public async void RefreshEmojiAsync()
         {
             while (true)
             {
-                emoji = await GetEmojis();
-                statistics = await GetStatistics();
-                categories = await GetCategories();
+                emoji = await GetEmojisAsync();
+                statistics = await GetStatisticsAsync();
+                categories = await GetCategoriesAsync();
                 EmojiButler.client.DebugLogger.LogMessage(LogLevel.Info, "EmojiButler", "Cached emoji list updated.", DateTime.Now);
                 Thread.Sleep(TimeSpan.FromMinutes(5));
             }

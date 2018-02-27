@@ -1,10 +1,7 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -49,7 +46,7 @@ namespace EmojiButler
         public static IReadOnlyDictionary<string, string> GetUnicodeEmojis()
         {
             PropertyInfo p = typeof(DiscordEmoji).GetProperty("UnicodeEmojis", BindingFlags.NonPublic | BindingFlags.Static);
-            return (IReadOnlyDictionary <string, string>)p.GetValue(null);
+            return (IReadOnlyDictionary<string, string>)p.GetValue(null);
         }
 
         public static int GetGuildCount(DiscordClient c) => c.Guilds.Count;

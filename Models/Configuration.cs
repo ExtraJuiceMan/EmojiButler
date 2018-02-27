@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace EmojiButler.Models
+﻿namespace EmojiButler.Models
 {
     public class Configuration
     {
