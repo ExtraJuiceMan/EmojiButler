@@ -55,7 +55,7 @@ namespace EmojiButler.Commands
                 return;
             }
 
-            if (allEmoji.Count(x => !x.IsAnimated) >= 50 && emoji.GetCategoryName() == "Animated")
+            if (allEmoji.Count(x => x.IsAnimated) >= 50 && emoji.GetCategoryName() == "Animated")
             {
                 await c.RespondAsync("It seems like you already have 50 *animated* emojis. That's the limit. Remove some before adding more.");
                 return;
