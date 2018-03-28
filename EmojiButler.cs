@@ -22,60 +22,61 @@ namespace EmojiButler
 {
     public static class EmojiButler
     {
-        public static DiscordClient client;
-        public static DiscordEmojiClient deClient;
-        public static CommandsNextModule commands;
-        public static Configuration configuration;
+        public static DiscordClient Client { get; private set; }
+        public static DiscordEmojiClient EmojiClient { get; private set; }
+        public static CommandsNextModule Commands { get; private set; }
+        public static Configuration Configuration { get; private set; }
         private static InteractivityModule interactivity;
 
         private static void Main(string[] args) => MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
 
         private static async Task MainAsync(string[] args)
         {
-            configuration = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("config.json"));
-            deClient = new DiscordEmojiClient();
+            Configuration = JsonConvert.DeserializeObject<Configuration>(File.ReadAllText("config.json"));
+            EmojiClient = new DiscordEmojiClient();
 
-            CancellationToken token;
-
-            using (CancellationTokenSource s = new CancellationTokenSource())
-                token = s.Token;
-
-            new Task(() => deClient.RefreshEmojiAsync(), token, TaskCreationOptions.LongRunning).Start();
-
-            client = new DiscordClient(new DiscordConfiguration
+            Client = new DiscordClient(new DiscordConfiguration
             {
                 UseInternalLogHandler = true,
 #if DEBUG
                 LogLevel = LogLevel.Debug,
 #endif
-                Token = configuration.Token,
+                Token = Configuration.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true
             });
 
-            commands = client.UseCommandsNext(new CommandsNextConfiguration
+            Commands = Client.UseCommandsNext(new CommandsNextConfiguration
             {
                 EnableDefaultHelp = false,
-                StringPrefix = configuration.Prefix
+                StringPrefix = Configuration.Prefix
             });
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                client.SetWebSocketClient<WebSocket4NetCoreClient>();
+                Client.SetWebSocketClient<WebSocket4NetCoreClient>();
 
-            interactivity = client.UseInteractivity(new InteractivityConfiguration());
+            interactivity = Client.UseInteractivity(new InteractivityConfiguration());
 
-            commands.RegisterCommands<EmojiCommands>();
-            commands.RegisterCommands<GeneralCommands>();
+            Commands.RegisterCommands<EmojiCommands>();
+            Commands.RegisterCommands<GeneralCommands>();
 
-            commands.CommandErrored += async (CommandErrorEventArgs e) =>
+            Commands.CommandErrored += async (CommandErrorEventArgs e) =>
             {
+                // TODO: rework this terrible error handler
+#if DEBUG
+                client.DebugLogger.LogMessage(LogLevel.Debug, "Exception", e.Exception.ToString(), DateTime.Now);
+#endif
                 if (e.Exception is ArgumentException arg)
                 {
                     // lol why even xd
                     if (arg.Message.StartsWith("Max message length"))
+                    {
                         await e.Context.RespondAsync("I was able to generate a response, but it was a wayyy too long for Discord...");
+                    }
                     else if (arg.Message.StartsWith("Could not convert"))
+                    {
                         await e.Context.RespondAsync("You supplied an invalid argument.");
+                    }
                     else
                     {
                         int argsPassed = e.Context.Message.Content.Split(' ').Length - 1;
@@ -84,42 +85,47 @@ namespace EmojiButler
                 }
                 else if (e.Exception is ChecksFailedException ex)
                 {
-                    string msg = "Checks for this command have failed: ";
+                    StringBuilder msg = new StringBuilder("Checks for this command have failed: ");
+
                     foreach (CheckBaseAttribute a in ex.FailedChecks)
                     {
                         if (a is RequirePermissionsAttribute)
-                            msg += "\nMissing Permissions";
+                            msg.Append("\nMissing Permissions");
                         else if (a is CooldownAttribute cd)
-                            msg += $"\nCooldown, {(int)cd.GetRemainingCooldown(e.Context).TotalSeconds}s left";
+                            msg.Append($"\nCooldown, {(int)cd.GetRemainingCooldown(e.Context).TotalSeconds}s left");
                     }
-                    await e.Context.RespondAsync(msg);
+
+                    await e.Context.RespondAsync(msg.ToString());
                 }
                 else if (e.Exception is InvalidOperationException)
+                {
                     await e.Context.RespondAsync("This command is not available for use in DMs.");
+                }
                 else if (e.Exception is CommandNotFoundException)
                 {
                     if (e.Context.Guild == null)
                         await e.Context.RespondAsync("That's an invalid command.");
                 }
-                else if (e.Exception is UnauthorizedException uex)
+                else if (e.Exception is UnauthorizedException)
                 {
-                    await e.Context.RespondAsync("I was not authorized to perform an action, please check that I have the proper permissions. If this was a help command, make sure that you have DMs enabled.");
+                    await e.Context.RespondAsync("I was not authorized to perform an action, please check that I have the proper permissions (Read/Send Messages, Manage Emojis, Embed Links). If this was a help command, make sure that you have DMs enabled.");
                 }
                 else
                 {
-                    await e.Context.RespondAsync($"An error has occurred. Please report this with ``{configuration.Prefix}reportissue <details>``.");
-                    client.DebugLogger.LogMessage(LogLevel.Critical, "Error", e.Exception.ToString(), DateTime.Now);
+                    await e.Context.RespondAsync($"An error has occurred. Please report this with ``{Configuration.Prefix}reportissue <details>``.");
+                    Client.DebugLogger.LogMessage(LogLevel.Critical, "Error", e.Exception.ToString(), DateTime.Now);
                 }
             };
 
-            await client.ConnectAsync();
+            await Client.ConnectAsync();
 
-            client.Ready += async (ReadyEventArgs a) =>
+            Client.Ready += async (ReadyEventArgs a) =>
             {
-                await client.UpdateStatusAsync(new DiscordGame($"{configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
+                await Client.UpdateStatusAsync(new DiscordGame($"{Configuration.Prefix}help | https://discordemoji.com"), UserStatus.DoNotDisturb);
 
-                if (!String.IsNullOrWhiteSpace(configuration.DblAuth))
-                    new Task(() => PostDBLAsync(), token, TaskCreationOptions.LongRunning).Start();
+                if (!String.IsNullOrWhiteSpace(Configuration.DblAuth))
+                    using (CancellationTokenSource s = new CancellationTokenSource())
+                        new Task(() => PostDBLAsync(), s.Token, TaskCreationOptions.LongRunning).Start();
             };
 
             await Task.Delay(-1);
@@ -128,19 +134,20 @@ namespace EmojiButler
         private static async void PostDBLAsync()
         {
             HttpClient c = new HttpClient();
-            c.DefaultRequestHeaders.Add("Authorization", configuration.DblAuth);
+
+            c.DefaultRequestHeaders.Add("Authorization", Configuration.DblAuth);
 
             while (true)
             {
                 HttpResponseMessage resp;
 
-                using (StringContent s = new StringContent(JsonConvert.SerializeObject(new { server_count = Util.GetGuildCount(client) }), Encoding.UTF8, "application/json"))
-                    resp = await c.PostAsync($"https://discordbots.org/api/bots/{configuration.BotId}/stats", s);
+                using (StringContent s = new StringContent(JsonConvert.SerializeObject(new { server_count = Util.GetGuildCount(Client) }), Encoding.UTF8, "application/json"))
+                    resp = await c.PostAsync($"https://discordbots.org/api/bots/{Configuration.BotId}/stats", s);
 
                 if (resp.IsSuccessStatusCode)
-                    client.DebugLogger.LogMessage(LogLevel.Info, "DBLPost", "Post to DBL was successful.", DateTime.Now);
+                    Client.DebugLogger.LogMessage(LogLevel.Info, "DBLPost", "Post to DBL was successful.", DateTime.Now);
                 else
-                    client.DebugLogger.LogMessage(LogLevel.Warning, "DBLPost", "Post to DBL was unsuccessful.", DateTime.Now);
+                    Client.DebugLogger.LogMessage(LogLevel.Warning, "DBLPost", "Post to DBL was unsuccessful.", DateTime.Now);
 
                 Thread.Sleep(TimeSpan.FromMinutes(5));
             }

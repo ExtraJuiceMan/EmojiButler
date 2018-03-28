@@ -13,7 +13,7 @@ namespace EmojiButler
         {
             string summary = c.Description ?? "No description provided.";
             string command = c.Name;
-            string prefix = EmojiButler.configuration.Prefix;
+            string prefix = EmojiButler.Configuration.Prefix;
             string usage = GenerateUsage(c);
 
             StringBuilder alias = null;
@@ -32,15 +32,16 @@ namespace EmojiButler
 
         public static string GenerateUsage(Command c)
         {
-            string result = $"{EmojiButler.configuration.Prefix}{c.Name} ";
+            StringBuilder result = new StringBuilder($"{EmojiButler.Configuration.Prefix}{c.Name} ");
+
             foreach (CommandArgument arg in c.Arguments)
             {
-                result += $"<{arg.Name}";
+                result.Append($"<{arg.Name}");
                 if (arg.IsOptional)
-                    result += " (Optional)";
-                result += "> ";
+                    result.Append(" (Optional)");
+                result.Append("> ");
             }
-            return result.Trim();
+            return result.ToString().Trim();
         }
 
         public static IReadOnlyDictionary<string, string> GetUnicodeEmojis()

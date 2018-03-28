@@ -5,6 +5,7 @@ using EmojiButler.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace EmojiButler.Commands
@@ -16,7 +17,7 @@ namespace EmojiButler.Commands
         [Cooldown(1, 30, CooldownBucketType.User)]
         public async Task ReportIssue(CommandContext c, [RemainingText, Description("Issue to report")] string issue)
         {
-            DiscordChannel issueChannel = await c.Client.GetChannelAsync(EmojiButler.configuration.IssueChannel);
+            DiscordChannel issueChannel = await c.Client.GetChannelAsync(EmojiButler.Configuration.IssueChannel);
 
             await issueChannel.SendMessageAsync(embed: new DiscordEmbedBuilder
             {
@@ -34,7 +35,7 @@ namespace EmojiButler.Commands
         {
             if (name != null)
             {
-                Command cmd = EmojiButler.commands.RegisteredCommands.Select(x => x.Value).Where(x => x != null && !x.IsHidden)
+                Command cmd = EmojiButler.Commands.RegisteredCommands.Select(x => x.Value).Where(x => x != null && !x.IsHidden)
                     .FirstOrDefault(x => String.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
 
                 if (cmd == null)
@@ -47,10 +48,10 @@ namespace EmojiButler.Commands
                 await c.RespondAsync($"\u200B\nCommand:\n\n``{usage}``\n\nParameters:\n\n{parameters}");
                 return;
             }
-            string desc = $"The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.\n\nTo get help on a particular command, do ``{EmojiButler.configuration.Prefix}help <commandName>``.";
+            string desc = $"The official EmojiButler manual. EmojiButler is a bot that grabs emoji for you from [DiscordEmoji](https://discordemoji.com). All commands involving the management of emojis require the user and bot to have the 'Manage Emojis' permission.\n\nTo get help on a particular command, do ``{EmojiButler.Configuration.Prefix}help <commandName>``.";
 
-            if (!String.IsNullOrWhiteSpace(EmojiButler.configuration.DblAuth))
-                desc += $"\n\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/{EmojiButler.configuration.BotId})!";
+            if (!String.IsNullOrWhiteSpace(EmojiButler.Configuration.DblAuth))
+                desc += $"\n\nIf you like my bot, vote for it on [DBL](https://discordbots.org/bot/{EmojiButler.Configuration.BotId})!";
 
             DiscordEmbedBuilder embed = new DiscordEmbedBuilder
             {
@@ -58,7 +59,7 @@ namespace EmojiButler.Commands
                 Description = desc
             }.AddField("\u200B", "**Commands**");
 
-            foreach (Command cmd in EmojiButler.commands.RegisteredCommands.Select(x => x.Value))
+            foreach (Command cmd in EmojiButler.Commands.RegisteredCommands.Select(x => x.Value))
                 if (cmd != null && !cmd.IsHidden)
                     Util.CreateCommandField(embed, cmd);
 
@@ -79,7 +80,7 @@ namespace EmojiButler.Commands
         [Cooldown(5, 15, CooldownBucketType.User)]
         public async Task DeStats(CommandContext c)
         {
-            Statistics s = EmojiButler.deClient.Statistics;
+            Statistics s = EmojiButler.EmojiClient.Statistics;
             await c.RespondAsync(embed: new DiscordEmbedBuilder
             {
                 Title = "DiscordEmoji Statistics"
@@ -110,16 +111,16 @@ namespace EmojiButler.Commands
             int count = r.Next(1, split.Count);
             for (int i = 0; i < count; i++)
             {
-                string addedEmojis = "";
+                StringBuilder addedEmojis = new StringBuilder();
                 int addCount = r.Next(0, 4);
 
                 if (content.Length < 100)
                     addCount += 1;
 
                 for (int x = 0; x < addCount; x++)
-                    addedEmojis += emojis.ElementAt(r.Next(emojis.Count()));
+                    addedEmojis.Append(emojis.ElementAt(r.Next(emojis.Count())));
 
-                split.Insert(r.Next(split.Count), addedEmojis);
+                split.Insert(r.Next(split.Count), addedEmojis.ToString());
             }
 
             string result = String.Join(' ', split);
