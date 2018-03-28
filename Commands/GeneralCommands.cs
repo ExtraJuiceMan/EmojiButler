@@ -35,7 +35,7 @@ namespace EmojiButler.Commands
         {
             if (name != null)
             {
-                Command cmd = EmojiButler.Commands.RegisteredCommands.Select(x => x.Value).Where(x => x != null && !x.IsHidden)
+                Command cmd = EmojiButler.Shard.GetCommandsNext().RegisteredCommands.Select(x => x.Value).Where(x => x != null && !x.IsHidden)
                     .FirstOrDefault(x => String.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase));
 
                 if (cmd == null)
@@ -59,7 +59,7 @@ namespace EmojiButler.Commands
                 Description = desc
             }.AddField("\u200B", "**Commands**");
 
-            foreach (Command cmd in EmojiButler.Commands.RegisteredCommands.Select(x => x.Value))
+            foreach (Command cmd in EmojiButler.Shard.GetCommandsNext().RegisteredCommands.Select(x => x.Value))
                 if (cmd != null && !cmd.IsHidden)
                     Util.CreateCommandField(embed, cmd);
 
@@ -146,7 +146,7 @@ namespace EmojiButler.Commands
             }
             .AddField("Library", "DSharpPlus 3.2.3")
             .AddField("Creator", "ExtraConcentratedJuice")
-            .AddField("Guild Count", Util.GetGuildCount(c.Client).ToString()));
+            .AddField("Guild Count", Util.GetGuildCount(EmojiButler.ShardsClient).ToString()));
 
         [Command("server"), Description("Displays an invite to the EmojiButler server."), Cooldown(5, 15, CooldownBucketType.User)]
         public async Task Server(CommandContext c) => await c.RespondAsync("https://discord.gg/Ushqydb");

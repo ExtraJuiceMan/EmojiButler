@@ -89,7 +89,7 @@ namespace EmojiButler
                 Emoji = await GetEmojisAsync();
                 Statistics = await GetStatisticsAsync();
                 Categories = await GetCategoriesAsync();
-                EmojiButler.Client.DebugLogger.LogMessage(LogLevel.Info, "EmojiButler", "Cached emoji list updated.", DateTime.Now);
+                EmojiButler.ShardsClient.DebugLogger.LogMessage(LogLevel.Info, "EmojiButler", "Cached emoji list updated.", DateTime.Now);
                 Thread.Sleep(TimeSpan.FromMinutes(5));
             }
         }

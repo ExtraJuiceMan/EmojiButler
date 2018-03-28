@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -50,6 +51,6 @@ namespace EmojiButler
             return (IReadOnlyDictionary<string, string>)p.GetValue(null);
         }
 
-        public static int GetGuildCount(DiscordClient c) => c.Guilds.Count;
+        public static int GetGuildCount(DiscordShardedClient c) => c.ShardClients.Values.Sum(x => x.Guilds.Count);
     }
 }
