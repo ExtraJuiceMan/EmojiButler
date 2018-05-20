@@ -41,6 +41,7 @@ namespace EmojiButler
         public async Task<Statistics> GetStatisticsAsync() =>
             await HttpGetAsync<Statistics>("stats");
 
+        [Obsolete("API method no longer available on DiscordEmoji.")]
         public async Task<List<Emoji>> SearchEmojisAsync(string query) =>
             await HttpGetAsync<List<Emoji>>("search", new Dictionary<string, string> { { "q", query } });
 

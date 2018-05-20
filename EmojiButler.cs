@@ -25,8 +25,8 @@ namespace EmojiButler
         public static DiscordClient Client { get; private set; }
         public static DiscordEmojiClient EmojiClient { get; private set; }
         public static CommandsNextModule Commands { get; private set; }
+        public static InteractivityModule Interactivity { get; private set; }
         public static Configuration Configuration { get; private set; }
-        private static InteractivityModule interactivity;
 
         private static void Main(string[] args) => MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -55,7 +55,7 @@ namespace EmojiButler
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 Client.SetWebSocketClient<WebSocket4NetCoreClient>();
 
-            interactivity = Client.UseInteractivity(new InteractivityConfiguration());
+            Interactivity = Client.UseInteractivity(new InteractivityConfiguration());
 
             Commands.RegisterCommands<EmojiCommands>();
             Commands.RegisterCommands<GeneralCommands>();

@@ -121,7 +121,7 @@ namespace EmojiButler.Commands
                 Title = "Confirmation",
                 Description = "Are you sure that you want to add this emoji to your server?" +
                     "\nReact in less than 30 seconds to confirm.",
-                ThumbnailUrl = emoji.GetImageUrl()
+                ThumbnailUrl = emoji.Image
             };
             embed.AddField("Name", emoji.Title);
 
@@ -156,7 +156,7 @@ namespace EmojiButler.Commands
                         {
                             if (e is BadRequestException)
                             {
-                                await resp.ModifyAsync("I failed to upload the requested emoji to Discord. It was probably too big.");
+                                await resp.ModifyAsync("I failed to upload the requested emoji to Discord. It was probably too big, or you selected an invalid name override.");
                                 return;
                             }
                             else if (e is RatelimitTooHighException exr)
@@ -170,7 +170,7 @@ namespace EmojiButler.Commands
                         {
                             Title = "Success!",
                             Description = $"You've added :{addedName}: to your server.",
-                            ThumbnailUrl = emoji.GetImageUrl()
+                            ThumbnailUrl = emoji.Image
                         });
                     }
                     else if (react.Emoji == Reactions.NO)
@@ -303,7 +303,7 @@ namespace EmojiButler.Commands
                 Title = $":{emoji.Title}:",
                 Url = $"https://discordemoji.com/emoji/{emoji.Slug}",
                 Description = $"Author: **{emoji.Author}**\nCategory: **{emoji.GetCategoryName()}**\nFavorites: **{emoji.Favorites}**\n\nDescription:\n*{WebUtility.HtmlDecode(emoji.Description).Trim()}*",
-                ImageUrl = emoji.GetImageUrl()
+                ImageUrl = emoji.Image
             }
             .WithFooter("https://discordemoji.com", "https://discordemoji.com/assets/img/icon.png"));
         }
