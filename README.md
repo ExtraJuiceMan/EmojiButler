@@ -1,3 +1,7 @@
+# Warning: Old fucking code
+
+Rewrite is at https://github.com/ExtraConcentratedJuice/EmojiButler-v2
+
 ![EmojiButler](https://i.imgur.com/xnoI5O8.png)
 
 # EmojiButler
